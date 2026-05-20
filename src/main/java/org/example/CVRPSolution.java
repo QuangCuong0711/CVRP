@@ -9,13 +9,24 @@ import java.util.List;
 @PlanningSolution
 public class CVRPSolution {
 
+    /**
+     * vehicleList = anchors của chain.
+     * Đây là một phần của value range cho previousStandstill.
+     */
     @ValueRangeProvider(id = "vehicleRange")
     private List<Vehicle> vehicleList;
 
-    @ValueRangeProvider(id = "standstillRange")
-    private List<Standstill> standstillList;
-
+    /**
+     * customerList = planning entities VÀ đồng thời là nodes trong chain.
+     * @PlanningEntityCollectionProperty đăng ký chúng là entity.
+     * @ValueRangeProvider đăng ký chúng là giá trị hợp lệ cho previousStandstill
+     * (customer có thể đứng sau customer khác trong cùng route).
+     *
+     * Timefold hỗ trợ một list vừa là entity vừa là value range —
+     * đây là cách chuẩn cho chained CVRP.
+     */
     @PlanningEntityCollectionProperty
+    @ValueRangeProvider(id = "customerRange")
     private List<Customer> customerList;
 
     private Depot depot;
@@ -26,18 +37,14 @@ public class CVRPSolution {
     public CVRPSolution() {}
 
     public CVRPSolution(List<Vehicle> vehicleList,
-                        List<Standstill> standstillList,
                         List<Customer> customerList,
                         Depot depot) {
         this.vehicleList = vehicleList;
-        this.standstillList = standstillList;
         this.customerList = customerList;
         this.depot = depot;
     }
 
     public List<Vehicle> getVehicleList() { return vehicleList; }
-
-    public List<Standstill> getStandstillList() { return standstillList; }
 
     public List<Customer> getCustomerList() { return customerList; }
 

@@ -1,87 +1,61 @@
 package org.example;
-import java.util.HashMap;
+
 import java.util.*;
 import java.nio.file.*;
 import java.io.*;
-
 
 public class CvrplibReader {
 
     public static CVRPSolution read(Path file) throws IOException {
 
-        List<Customer> customers = new ArrayList<>();
-        List<Standstill> standstills = new ArrayList<>();
-
-        Depot depot = null;
-        List<Vehicle> vehicles = new ArrayList<>();
-
         List<String> lines = Files.readAllLines(file);
 
-        boolean nodeSection = false;
-        boolean demandSection = false;
-
-        Map<Integer, Location> coords = new HashMap<>();
-        Map<Integer, Integer> demands = new HashMap<>();
+        int numTrucks = 5;
+        int capacity  = 100;
 
         for (String line : lines) {
-
-            if (line.startsWith("NODE_COORD_SECTION")) {
-                nodeSection = true;
-                continue;
+            String t = line.trim();
+            if (t.startsWith("CAPACITY")) {
+                capacity  = Integer.parseInt(t.replaceAll("[^0-9]", "").trim());
             }
-            if (line.startsWith("DEMAND_SECTION")) {
-                nodeSection = false;
-                demandSection = true;
-                continue;
-            }
-
-            if (line.startsWith("DEPOT_SECTION")) break;
-
-            if (nodeSection) {
-                String[] p = line.trim().split("\\s+");
-                if (p.length >= 3) {
-                    coords.put(Integer.parseInt(p[0]),
-                            new Location(Double.parseDouble(p[1]),
-                                    Double.parseDouble(p[2])));
-                }
-            }
-
-            if (demandSection) {
-                String[] p = line.trim().split("\\s+");
-                if (p.length >= 2) {
-                    demands.put(Integer.parseInt(p[0]),
-                            Integer.parseInt(p[1]));
-                }
+            if (t.startsWith("TRUCKS")) {
+                numTrucks = Integer.parseInt(t.replaceAll("[^0-9]", "").trim());
             }
         }
 
-        // depot = node 1
-        depot = new Depot(coords.get(1));
+        Map<Integer, Location> coords  = new LinkedHashMap<>();
+        Map<Integer, Integer>  demands = new LinkedHashMap<>();
+        boolean nodeSection   = false;
+        boolean demandSection = false;
 
-        // build vehicles (simple heuristic)
-        vehicles.add(new Vehicle(1, 100, depot));
-        vehicles.add(new Vehicle(2, 100, depot));
+        for (String line : lines) {
+            String t = line.trim();
+            if (t.startsWith("NODE_COORD_SECTION")) { nodeSection = true;  demandSection = false; continue; }
+            if (t.startsWith("DEMAND_SECTION"))     { demandSection = true; nodeSection  = false; continue; }
+            if (t.startsWith("DEPOT_SECTION"))      break;
+            if (t.isEmpty() || t.equals("EOF"))     continue;
 
-        standstills.addAll(vehicles);
-        standstills.add(depot);
+            String[] p = t.split("\\s+");
+            if (nodeSection && p.length >= 3)
+                coords.put(Integer.parseInt(p[0]),
+                        new Location(Double.parseDouble(p[1]), Double.parseDouble(p[2])));
+            if (demandSection && p.length >= 2)
+                demands.put(Integer.parseInt(p[0]), Integer.parseInt(p[1]));
+        }
 
+        Depot depot = new Depot(coords.get(1));
+
+        List<Vehicle> vehicles = new ArrayList<>();
+        for (int i = 1; i <= numTrucks; i++)
+            vehicles.add(new Vehicle(i, capacity, depot));
+
+        // customerList only — NO mixed standstillList anymore
+        List<Customer> customers = new ArrayList<>();
         for (int id : coords.keySet()) {
             if (id == 1) continue;
-
-            Customer c = new Customer(
-                    id,
-                    coords.get(id),
-                    demands.getOrDefault(id, 0)
-            );
-
-            customers.add(c);
+            customers.add(new Customer(id, coords.get(id), demands.getOrDefault(id, 0)));
         }
 
-        return new CVRPSolution(
-                vehicles,
-                standstills,
-                customers,
-                depot
-        );
+        return new CVRPSolution(vehicles, customers, depot);
     }
 }

@@ -7,13 +7,14 @@ public class CVRPConstraintProvider implements ConstraintProvider {
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
-        return new Constraint[] {
+        return new Constraint[]{
                 vehicleCapacity(factory),
-                distanceCost(factory)
+                distanceCost(factory),
+                returnToDepotCost(factory)
         };
     }
 
-    // HARD constraint: capacity
+    // HARD: tổng demand trên mỗi xe không vượt capacity
     private Constraint vehicleCapacity(ConstraintFactory factory) {
         return factory.forEach(Customer.class)
                 .groupBy(
@@ -30,26 +31,7 @@ public class CVRPConstraintProvider implements ConstraintProvider {
                 .asConstraint("vehicle capacity exceeded");
     }
 
-    private Constraint vehicleChainConsistency(ConstraintFactory factory) {
-        return factory.forEach(Customer.class)
-                .filter(customer -> {
-                    Standstill prev = customer.getPreviousStandstill();
-
-                    if (prev == null) {
-                        return true; // ❌ invalid
-                    }
-
-                    if (prev instanceof Customer c) {
-                        return c.getVehicle() != customer.getVehicle();
-                    }
-
-                    return false;
-                })
-                .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("route consistency");
-    }
-
-    // SOFT constraint: distance
+    // SOFT: khoảng cách từ previous → customer (toàn bộ các cạnh nội tuyến)
     private Constraint distanceCost(ConstraintFactory factory) {
         return factory.forEach(Customer.class)
                 .penalize(
@@ -57,11 +39,27 @@ public class CVRPConstraintProvider implements ConstraintProvider {
                         customer -> {
                             Standstill prev = customer.getPreviousStandstill();
                             if (prev == null) return 0;
-
-                            return (int) prev.getLocation()
-                                    .distanceTo(customer.getLocation());
+                            return (int) Math.round(
+                                    prev.getLocation().distanceTo(customer.getLocation()));
                         }
                 )
                 .asConstraint("distance cost");
+    }
+
+    // SOFT: khoảng cách từ customer cuối của mỗi xe quay về depot
+    // Customer "cuối" = không có Customer nào trỏ vào nó làm previousStandstill
+    private Constraint returnToDepotCost(ConstraintFactory factory) {
+        return factory.forEach(Customer.class)
+                // Chỉ giữ lại customer KHÔNG có customer nào đứng sau nó
+                .ifNotExists(Customer.class,
+                        Joiners.equal(c -> c, Customer::getPreviousStandstill))
+                .filter(customer -> customer.getVehicle() != null)
+                .penalize(
+                        HardSoftScore.ONE_SOFT,
+                        customer -> (int) Math.round(
+                                customer.getLocation()
+                                        .distanceTo(customer.getVehicle().getDepot().getLocation()))
+                )
+                .asConstraint("return to depot cost");
     }
 }
