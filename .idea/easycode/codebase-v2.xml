@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="com.obiscr.chatgpt.settings.EasyCodeState">
+    <option name="projectFiles" value="$PROJECT_DIR$/src/main/java/org/example/Customer.java;C:/Users/doqua/Downloads/CVRP/src/main/java/org/example/Depot.java;C:/Users/doqua/Downloads/CVRP/src/main/java/org/example/Location.java;C:/Users/doqua/Downloads/CVRP/src/main/java/org/example/Main.java;C:/Users/doqua/Downloads/CVRP/src/main/java/org/example/Standstill.java;C:/Users/doqua/Downloads/CVRP/src/main/java/org/example/Vehicle.java;C:/Users/doqua/Downloads/CVRP/pom.xml" />
+  </component>
+</project>

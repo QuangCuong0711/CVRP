@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver xmlns="https://timefold.ai/xsd/solver"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://timefold.ai/xsd/solver
+            https://timefold.ai/xsd/solver/solver.xsd">
+
+    <!-- Domain model -->
+    <solutionClass>org.example.CVRPSolution</solutionClass>
+    <entityClass>org.example.Customer</entityClass>
+
+    <!-- Score calculation via Constraint Streams (Bavet, incremental) -->
+    <scoreDirectorFactory>
+        <constraintProviderClass>org.example.CVRPConstraintProvider</constraintProviderClass>
+    </scoreDirectorFactory>
+
+    <termination>
+        <secondsSpentLimit>60</secondsSpentLimit>
+    </termination>
+
+    <!-- Phase 1: Construction Heuristic — builds an initial feasible tour -->
+    <constructionHeuristic/>
+
+    <!-- Phase 2: Local Search — improves the tour -->
+    <localSearch>
+        <!-- Tabu Search balances intensification and diversification -->
+        <localSearchType>TABU_SEARCH</localSearchType>
+    </localSearch>
+</solver>
